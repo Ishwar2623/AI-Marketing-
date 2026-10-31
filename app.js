@@ -1,120 +1,22 @@
-let token=localStorage.getItem("amo_token"), supabaseClient=null, authMode="login", supaUser=null;
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-
-async function initBackend(){
-  try{
-    const c=await fetch("/api/config").then(r=>r.json());
-    if(c.supabaseUrl && c.supabaseAnonKey && window.supabase){
-      supabaseClient=window.supabase.createClient(c.supabaseUrl,c.supabaseAnonKey);
-      const {data}=await supabaseClient.auth.getSession();
-      if(data.session){supaUser=data.session.user;token=data.session.access_token;localStorage.setItem("amo_token",token)}
-    }
-  }catch{}
-}
-async function api(url,opts={}){
-  opts.headers={...(opts.headers||{}),...(token?{Authorization:"Bearer "+token}:{}),...(opts.body?{"Content-Type":"application/json"}:{})};
-  const r=await fetch(url,opts);const d=await r.json().catch(()=>({}));
-  if(!r.ok)throw Error(d.error||"Request failed");return d;
-}
-function toast(t){const x=$("#toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),2500)}
-function showApp(){if(!token)return;$("#auth").classList.add("hidden");$("#app").classList.remove("hidden");loadDashboard();loadBusiness();loadCampaigns();loadMeta();if(supaUser)$("#userLabel").textContent=supaUser.email||"Workspace"}
-function showAuth(){token=null;supaUser=null;localStorage.removeItem("amo_token");$("#auth").classList.remove("hidden");$("#app").classList.add("hidden")}
-$$(".tab").forEach(b=>b.onclick=()=>{$$(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");authMode=b.dataset.auth;$("#auth").classList.toggle("signup",authMode==="signup");$("#authBtn").textContent=authMode==="signup"?"Create account":"Login"});
-$("#authBtn").onclick=async()=>{
-  try{
-    const email=$("#authEmail").value.trim(), password=$("#authPassword").value;
-    if(!supabaseClient) { token="demo"; localStorage.setItem("amo_token",token); $("#userLabel").textContent=$("#authName").value||"Demo User"; showApp(); toast("Demo mode — add Supabase in Netlify for real accounts"); return; }
-    let result;
-    if(authMode==="signup"){
-      result=await supabaseClient.auth.signUp({email,password,options:{data:{name:$("#authName").value}}});
-      if(result.error)throw result.error;
-      if(!result.data.session){$("#authMsg").textContent="Check your email to confirm your account.";return}
-    }else{
-      result=await supabaseClient.auth.signInWithPassword({email,password});
-      if(result.error)throw result.error;
-    }
-    supaUser=result.data.user;token=result.data.session.access_token;localStorage.setItem("amo_token",token);showApp();
-  }catch(e){$("#authMsg").textContent=e.message}
-};
-$("#logout").onclick=async()=>{if(supabaseClient)await supabaseClient.auth.signOut();showAuth()};
-$$(".nav").forEach(b=>b.onclick=()=>{$$(".nav").forEach(x=>x.classList.remove("active"));b.classList.add("active");$$(".page").forEach(p=>p.classList.remove("active"));$("#"+b.dataset.page).classList.add("active");$("#pageTitle").textContent=b.textContent.trim();if(innerWidth<900)$("#menu").click()});
-$("#menu").onclick=()=>document.querySelector("aside").classList.toggle("open");
-
-async function loadDashboard(){
- try{
-  if(supabaseClient&&supaUser){
-   const {data:cs}=await supabaseClient.from("campaigns").select("*").order("created_at",{ascending:false});
-   const {count}=await supabaseClient.from("leads").select("*",{count:"exact",head:true});
-   const spend=(cs||[]).reduce((a,c)=>a+Number(c.spend||0),0);
-   $("#mSpend").textContent="₹"+spend.toLocaleString("en-IN");$("#mLeads").textContent=count||0;
-  }
- }catch{}
-}
-async function loadBusiness(){
- try{
-  if(!supabaseClient||!supaUser)return;
-  const {data:b}=await supabaseClient.from("businesses").select("*").eq("user_id",supaUser.id).maybeSingle();
-  if(!b)return;
-  for(const [id,key] of [["bizName","name"],["bizIndustry","industry"],["bizLocation","location"],["bizWebsite","website"],["bizOffer","offer"],["bizAudience","audience"],["bizGoal","goal"],["bizBudget","budget"]])$("#"+id).value=b[key]||"";
- }catch{}
-}
-$("#saveBiz").onclick=async()=>{
- try{
-  if(!supabaseClient||!supaUser){toast("Connect Supabase in Netlify for saved business data");return}
-  const payload={user_id:supaUser.id,name:$("#bizName").value,industry:$("#bizIndustry").value,location:$("#bizLocation").value,website:$("#bizWebsite").value,offer:$("#bizOffer").value,audience:$("#bizAudience").value,goal:$("#bizGoal").value,budget:$("#bizBudget").value};
-  const {error}=await supabaseClient.from("businesses").upsert(payload,{onConflict:"user_id"});if(error)throw error;toast("Business profile saved")
- }catch(e){toast(e.message)}
-};
-
-async function askAI(text){
- const m=$("#chatMessages");m.insertAdjacentHTML("beforeend",`<div class="bubble user">${text.replaceAll("<","&lt;")}</div>`);
- const thinking=document.createElement("div");thinking.className="bubble ai";thinking.textContent="Thinking…";m.appendChild(thinking);m.scrollTop=m.scrollHeight;
- try{const d=await api("/api/ai/chat",{method:"POST",body:JSON.stringify({message:text})});thinking.innerHTML="<b>AI Marketing Strategist</b><br>"+d.reply.replaceAll("\n","<br>")}catch(e){thinking.textContent=e.message}
- m.scrollTop=m.scrollHeight;
-}
-$("#chatSend").onclick=()=>{const x=$("#chatInput");if(x.value.trim()){askAI(x.value.trim());x.value=""}};
-$("#chatInput").onkeydown=e=>{if(e.key==="Enter")$("#chatSend").click()};
-$$(".chips button").forEach(b=>b.onclick=()=>askAI(b.textContent));
-$("#heroAsk").onclick=()=>{const x=$("#heroPrompt").value.trim();if(x){document.querySelector('[data-page="assistant"]').click();askAI(x)}};
-
-async function loadCampaigns(){
- const box=$("#campaignList");
- try{
-  let items=[];
-  if(supabaseClient&&supaUser){const {data}=await supabaseClient.from("campaigns").select("*").order("created_at",{ascending:false});items=data||[]}
-  if(!items.length)items=[{name:"Lead Generation — Demo",status:"Demo",spend:18450,leads:242,cpl:76,roas:2.8}];
-  box.innerHTML=items.map(c=>`<div class="card campaign"><div><span class="tag ${c.status==="Active"?"green":""}">${c.status||"Draft"}</span><h3>${c.name}</h3><p>AI campaign workspace</p></div><div class="stats"><span>Spend ₹${Number(c.spend||0).toLocaleString("en-IN")}</span><span>Leads ${c.leads||0}</span><span>CPL ₹${c.cpl||"—"}</span></div></div>`).join("")
- }catch{}
-}
-async function createCampaign(){
- const goal=prompt("What is the campaign goal?","Lead Generation");if(!goal)return;
- try{
-  const d=await api("/api/ai/campaign",{method:"POST",body:JSON.stringify({goal})});
-  if(supabaseClient&&supaUser){const {error}=await supabaseClient.from("campaigns").insert({user_id:supaUser.id,name:d.name,status:"Draft",objective:d.objective,data:d});if(error)throw error}
-  loadCampaigns();toast("AI campaign draft created — review before launch")
- }catch(e){toast(e.message)}
-}
-$("#campaignAI").onclick=createCampaign;$("#newCampaign").onclick=createCampaign;
-
-$("#creativeBtn").onclick=async()=>{
- try{const d=await api("/api/ai/creative",{method:"POST",body:JSON.stringify({product:$("#creativeProduct").value,angle:$("#creativeAngle").value,format:$("#creativeFormat").value})});
- $("#creativeResult").innerHTML=`<div class="card" style="margin-top:16px"><span class="tag blue">AI CONCEPT</span><h2>${d.title}</h2><p><b>Hook:</b> ${d.hook}</p><p><b>Layout:</b> ${d.layout.join(" → ")}</p><p>${d.meta}</p></div>`
- }catch(e){toast(e.message)}
-};
-$("#metaBtn").onclick=async()=>{try{const d=await api("/api/meta/connect");location.href=d.url}catch(e){toast(e.message)}};
-async function loadMeta(){try{const d=await api("/api/meta/status");$("#metaStatus").textContent=d.configured?"Configured / review required":"Not configured"}catch{}}
-$("#flowBtn").onclick=async()=>{
- try{
-  if(supabaseClient&&supaUser){const {error}=await supabaseClient.from("automations").insert({user_id:supaUser.id,name:"New keyword flow",trigger_type:"COMMENT_KEYWORD",keyword:"INFO"});if(error)throw error}
-  toast("Automation draft created")
- }catch(e){toast(e.message)}
-};
-$("#leadBtn").onclick=async()=>{
- const name=prompt("Lead name");if(!name)return;const phone=prompt("Phone");
- try{
-  if(supabaseClient&&supaUser){const {error}=await supabaseClient.from("leads").insert({user_id:supaUser.id,name,phone,source:"Manual",score:50});if(error)throw error}
-  $("#leadTable").insertAdjacentHTML("afterbegin",`<tr><td>${name}</td><td>Manual</td><td><span class="tag green">New</span></td><td>50</td><td>—</td></tr>`);toast("Lead added")
- }catch(e){toast(e.message)}
-};
-
-(async()=>{await initBackend();if(token)showApp()})();
+let sb=null,user=null,business=null;
+const $=id=>document.getElementById(id);
+const msg=(id,t,c="")=>{let e=$(id);if(e){e.textContent=t;e.className="auth-msg "+c}};
+async function api(path,opt={}){let r=await fetch("/api/"+path,{...opt,headers:{"Content-Type":"application/json",...(opt.headers||{})}});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Request failed");return d}
+function mode(m){document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.auth===m));let s=m==="signup";$("authTitle").textContent=s?"Create your account":"Welcome back";$("authSubtitle").textContent=s?"Create your workspace and start marketing with AI.":"Sign in to your marketing workspace.";$("authName").classList.toggle("hidden",!s);$("authConfirm").classList.toggle("hidden",!s);$("termsField").classList.toggle("hidden",!s);$("forgotBtn").classList.toggle("hidden",s);$("authBtn").textContent=s?"Create account":"Login";msg("authMsg","")}
+function showAuth(){$("auth").classList.remove("hidden");$("app").classList.add("hidden");$("onboarding").classList.add("hidden");user=null;business=null}
+function friendly(e){if(/invalid login credentials/i.test(e))return"Incorrect email or password.";if(/email not confirmed/i.test(e))return"Please verify your email first, then log in.";if(/already registered/i.test(e))return"An account with this email already exists. Try Login.";return e}
+async function submitAuth(e){e.preventDefault();if(!sb){msg("authMsg","Supabase is not configured in Netlify.","error");return}let s=document.querySelector(".tab.active").dataset.auth==="signup",email=$("authEmail").value.trim(),p=$("authPassword").value;if(p.length<8)return msg("authMsg","Password must be at least 8 characters.","error");$("authBtn").disabled=true;try{if(s){let n=$("authName").value.trim();if(!n)return msg("authMsg","Enter your full name.","error");if(p!==$("authConfirm").value)return msg("authMsg","Passwords do not match.","error");if(!$("authTerms").checked)return msg("authMsg","Accept the Terms and Privacy Policy.","error");let {data,error}=await sb.auth.signUp({email,password:p,options:{data:{name:n}}});if(error)throw error;if(data.session)enter(data.user);else msg("authMsg","Account created. Check your email and click the verification link before logging in.","success")}else{let {data,error}=await sb.auth.signInWithPassword({email,password:p});if(error)throw error;enter(data.user)}}catch(x){msg("authMsg",friendly(x.message),"error")}finally{$("authBtn").disabled=false;$("authBtn").textContent=s?"Create account":"Login"}}
+async function forgot(){let e=$("authEmail").value.trim();if(!e)return msg("authMsg","Enter your email first.","error");try{await sb.auth.resetPasswordForEmail(e,{redirectTo:location.origin+"/#reset"});msg("authMsg","Password reset email sent. Check your inbox.","success")}catch(x){msg("authMsg",x.message,"error")}}
+async function reset(e){e.preventDefault();let a=$("newPassword").value,b=$("newPasswordConfirm").value;if(a.length<8||a!==b)return msg("resetMsg",a.length<8?"Password must be at least 8 characters.":"Passwords do not match.","error");try{let {error}=await sb.auth.updateUser({password:a});if(error)throw error;msg("resetMsg","Password updated. You can log in with the new password.","success");setTimeout(()=>{location.hash="";$("resetView").classList.add("hidden");$("authView").classList.remove("hidden");mode("login")},1000)}catch(x){msg("resetMsg",x.message,"error")}}
+async function enter(u){user=u;$("auth").classList.add("hidden");$("app").classList.remove("hidden");let n=u.user_metadata?.name||u.email.split("@")[0];if($("userLabel"))$("userLabel").textContent=n;if($("userEmail"))$("userEmail").textContent=u.email;await loadBusiness()}
+async function loadBusiness(){let {data,error}=await sb.from("businesses").select("*").eq("user_id",user.id).limit(1);if(error)return;if(data?.[0]){business=data[0];fill(data[0])}else $("onboarding").classList.remove("hidden")}
+function fill(b){["Name","Industry","Location","Website","Offer","Audience","Goal","Budget"].forEach(k=>{let e=$("biz"+k);if(e)e.value=b[k.toLowerCase()]||""})}
+async function saveBusiness(){let p={user_id:user.id,name:$("bizName").value.trim(),industry:$("bizIndustry").value.trim(),location:$("bizLocation").value.trim(),website:$("bizWebsite").value.trim(),offer:$("bizOffer").value.trim(),audience:$("bizAudience").value.trim(),goal:$("bizGoal").value.trim(),budget:$("bizBudget").value.trim()};if(!p.name||!p.industry||!p.offer||!p.audience||!p.goal)return msg("bizMsg","Complete the required business fields.","error");let {data,error}=await sb.from("businesses").upsert(p,{onConflict:"user_id"}).select().single();if(error)return msg("bizMsg",error.message,"error");business=data;msg("bizMsg","Business profile saved.","success")}
+async function onboard(e){e.preventDefault();let p={user_id:user.id,name:$("obName").value.trim(),industry:$("obIndustry").value.trim(),location:$("obLocation").value.trim(),website:$("obWebsite").value.trim(),offer:$("obOffer").value.trim(),audience:$("obAudience").value.trim(),goal:$("obGoal").value.trim(),budget:$("obBudget").value.trim()};try{let {data,error}=await sb.from("businesses").upsert(p,{onConflict:"user_id"}).select().single();if(error)throw error;business=data;$("onboarding").classList.add("hidden");fill(data)}catch(x){msg("obMsg",x.message,"error")}}
+async function logout(){await sb.auth.signOut()}
+document.addEventListener("DOMContentLoaded",async()=>{
+document.querySelectorAll(".tab").forEach(x=>x.onclick=()=>mode(x.dataset.auth));$("authForm").onsubmit=submitAuth;$("forgotBtn").onclick=forgot;$("resetForm").onsubmit=reset;$("onboardingForm").onsubmit=onboard;$("saveBiz").onclick=saveBusiness;$("logout").onclick=logout;$("togglePassword").onclick=()=>{let i=$("authPassword");i.type=i.type==="password"?"text":"password";$("togglePassword").textContent=i.type==="password"?"Show":"Hide"};
+document.querySelectorAll(".nav").forEach(n=>n.onclick=()=>{document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===n.dataset.page));document.querySelectorAll(".nav").forEach(x=>x.classList.toggle("active",x===n));$("pageTitle").textContent=n.textContent.replace(/^[^\w]+/,"").trim()});
+mode("login");
+try{let c=await api("config");if(!c.supabaseUrl||!c.supabaseAnonKey)return msg("authMsg","Add SUPABASE_URL and SUPABASE_ANON_KEY in Netlify environment variables.","error");sb=window.supabase.createClient(c.supabaseUrl,c.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});let {data:{session}}=await sb.auth.getSession();if(session)await enter(session.user);sb.auth.onAuthStateChange((ev,s)=>{if(ev==="SIGNED_IN"&&s)enter(s.user);if(ev==="SIGNED_OUT")showAuth();if(ev==="PASSWORD_RECOVERY"){$("auth").classList.remove("hidden");$("app").classList.add("hidden");$("authView").classList.add("hidden");$("resetView").classList.remove("hidden")}})}catch(e){msg("authMsg","Could not connect to Supabase.","error")}
+});

@@ -1,36 +1,10 @@
-# Deploy AI Marketing OS to Netlify
+# AI Marketing OS — Auth Setup
 
-## 1. Upload to GitHub
-Create a GitHub repository and upload this folder.
+1. Netlify Environment Variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`. Add `OPENAI_API_KEY` later for live AI.
+2. Supabase → Authentication → Providers → Email: enable Email.
+3. Keep email confirmation enabled if you want verification before first login.
+4. Supabase → Authentication → URL Configuration: set Site URL to your Netlify URL and add it to Redirect URLs.
+5. Run `supabase/schema.sql` if the tables/policies are not already present.
+6. Push these files to GitHub; Netlify will redeploy.
 
-## 2. Netlify
-Netlify -> Add new site -> Import an existing project -> choose GitHub repository.
-
-Build command: leave empty.
-Publish directory: `.`
-
-`netlify.toml` already configures the Functions directory and API redirects.
-
-## 3. Supabase
-Create a Supabase project.
-Open SQL Editor and run:
-`supabase/schema.sql`
-
-Then in Netlify -> Site configuration -> Environment variables add:
-- SUPABASE_URL
-- SUPABASE_ANON_KEY
-- OPENAI_API_KEY (optional)
-- OPENAI_MODEL (optional)
-- META_APP_ID (later)
-- META_APP_SECRET (later)
-- META_REDIRECT_URI (later)
-- META_LIVE_ENABLED=false
-
-Redeploy after adding variables.
-
-## 4. Result
-Frontend: Netlify
-Database/Auth: Supabase
-AI server calls: Netlify Functions
-Meta integration: Netlify Functions
-No local server is required for production.
+Flow: Signup → verification email → Login → first-time business setup → Dashboard. Forgot password and reset password are included. There is no demo-login bypass.
