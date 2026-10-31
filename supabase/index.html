@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>AI Marketing OS</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<div id="auth" class="auth">
+<div class="auth-card">
+  <div class="logo">✦ AI Marketing OS</div>
+  <div id="authView">
+    <h1 id="authTitle">Welcome back</h1>
+    <p id="authSubtitle">Sign in to your marketing workspace.</p>
+    <div class="tabs"><button class="tab active" data-auth="login">Login</button><button class="tab" data-auth="signup">Create account</button></div>
+    <form id="authForm">
+      <input id="authName" class="signup-only hidden" placeholder="Full name" autocomplete="name">
+      <input id="authEmail" type="email" placeholder="Email" autocomplete="email" required>
+      <div class="password-wrap"><input id="authPassword" type="password" placeholder="Password (8+ characters)" autocomplete="current-password" required><button type="button" id="togglePassword">Show</button></div>
+      <input id="authConfirm" class="signup-only hidden" type="password" placeholder="Confirm password" autocomplete="new-password">
+      <label id="termsField" class="check hidden"><input id="authTerms" type="checkbox"> I agree to the Terms and Privacy Policy.</label>
+      <button id="authBtn" class="primary wide" type="submit">Login</button>
+    </form>
+    <button id="forgotBtn" class="link-btn">Forgot password?</button>
+    <div id="authMsg" class="auth-msg"></div>
+  </div>
+  <div id="resetView" class="hidden">
+    <h1>Reset password</h1><p>Choose a new password for your account.</p>
+    <form id="resetForm"><input id="newPassword" type="password" minlength="8" placeholder="New password" required><input id="newPasswordConfirm" type="password" minlength="8" placeholder="Confirm password" required><button class="primary wide">Update password</button></form>
+    <div id="resetMsg" class="auth-msg"></div>
+  </div>
+</div></div>
+<div id="onboarding" class="modal hidden"><div class="modal-card">
+<div class="eyebrow">WELCOME TO AI MARKETING OS</div><h2>Set up your workspace</h2>
+<p>Give the AI a little context about your business before you start.</p>
+<form id="onboardingForm" class="form-grid">
+<input id="obName" placeholder="Business name" required><input id="obIndustry" placeholder="Industry" required>
+<input id="obLocation" placeholder="City / market"><input id="obWebsite" placeholder="Website">
+<input id="obOffer" placeholder="Main product / service / offer" required><input id="obAudience" placeholder="Target audience" required>
+<input id="obGoal" placeholder="Primary marketing goal" required><input id="obBudget" placeholder="Monthly ad budget">
+<button class="primary wide" type="submit">Enter dashboard</button></form><div id="obMsg" class="auth-msg"></div>
+</div></div>
+<div id="app" class="hidden">
+<aside><div class="brand">✦ <span>AI Marketing OS</span></div><nav>
+<button class="nav active" data-page="dashboard">⌂ Dashboard</button><button class="nav" data-page="assistant">✦ AI Assistant</button><button class="nav" data-page="campaigns">◈ Campaigns</button><button class="nav" data-page="creative">▣ Creative Studio</button><button class="nav" data-page="audience">◎ Audience Intelligence</button><button class="nav" data-page="analytics">◔ Analytics</button><button class="nav" data-page="instagram">◉ Instagram Automation</button><button class="nav" data-page="leads">♢ Leads</button><button class="nav" data-page="crm">▦ CRM Pipeline</button><button class="nav" data-page="settings">⚙ Settings</button></nav><div class="side-bottom"><div id="userLabel">Guest</div><button id="logout" class="ghost">Log out</button></div></aside>
+<main>
+<header><button id="menu" class="mobile-menu">☰</button><div><div class="eyebrow">AI MARKETING OS</div><h2 id="pageTitle">Dashboard</h2></div><div class="header-actions"><button id="metaBtn" class="outline">Connect Meta</button><button id="newCampaign" class="primary">+ Create with AI</button></div></header>
+<section id="dashboard" class="page active"><div class="hero"><div><div class="pill">AI strategy engine</div><h1>What do you want to achieve?</h1><p>Tell the AI your goal in plain language. It turns your idea into a practical marketing plan.</p><div class="prompt-row"><input id="heroPrompt" placeholder="e.g. I sell premium skincare and want 100 qualified leads..."><button class="primary" id="heroAsk">Build plan</button></div></div><div class="hero-art"><div class="orbit"></div><div class="orbital">AI</div></div></div><div class="metrics"><div><span>Marketing Score</span><b id="mScore">—</b><small>/100</small></div><div><span>Ad Spend</span><b id="mSpend">₹0</b><small>this month</small></div><div><span>Leads</span><b id="mLeads">0</b><small>+18.4%</small></div><div><span>Avg. CPL</span><b id="mCpl">—</b><small>↓ 12%</small></div></div><div class="grid2"><div class="card"><div class="card-head"><h3>Campaign performance</h3><span class="tag">No live campaigns</span></div><div class="bars"><i style="height:42%"></i><i style="height:65%"></i><i style="height:51%"></i><i style="height:78%"></i><i style="height:61%"></i><i style="height:88%"></i><i style="height:73%"></i><i style="height:96%"></i></div></div><div class="card"><div class="card-head"><h3>AI recommendations</h3><span>✦</span></div><div id="recommendations"><div class="rec"><b>Reduce CPL</b><p>Shift budget toward your strongest lead creative and refresh the weakest hook.</p></div><div class="rec"><b>Build retargeting</b><p>People who engaged but did not convert are a high-intent audience.</p></div></div></div></div></section>
+<section id="assistant" class="page"><div class="chat card"><div id="chatMessages" class="messages"><div class="bubble ai"><b>AI Marketing Strategist</b><br>Tell me about your business, offer and goal. I’ll turn it into a campaign plan.</div></div><div class="chips"><button>Get more leads</button><button>Increase sales</button><button>Launch Instagram campaign</button></div><div class="chatbar"><input id="chatInput" placeholder="Ask anything about your marketing..."><button class="primary" id="chatSend">Send</button></div></div></section>
+<section id="campaigns" class="page"><div class="section-head"><div><h2>Your campaigns</h2><p>Draft, review and prepare campaigns before live launch.</p></div><button class="primary" id="campaignAI">Create campaign with AI</button></div><div id="campaignList" class="cards"></div></section>
+<section id="creative" class="page"><div class="section-head"><div><h2>Creative Studio</h2><p>Generate concepts that are ready for your designer or image-generation workflow.</p></div></div><div class="form-grid card"><input id="creativeProduct" placeholder="Product / offer"><input id="creativeAngle" placeholder="Angle e.g. problem → solution"><select id="creativeFormat"><option>1080×1350</option><option>1080×1920 Reel</option><option>1080×1080</option></select><button class="primary" id="creativeBtn">Generate concept</button></div><div id="creativeResult"></div></section>
+<section id="audience" class="page"><div class="section-head"><div><h2>Audience Intelligence</h2><p>Start broad enough to learn, then tighten around quality signals.</p></div></div><div class="cards three"><div class="card"><span class="tag blue">RECOMMENDED</span><h3>High Intent</h3><p>People showing strong category and offer intent.</p><b>Priority 92/100</b></div><div class="card"><span class="tag purple">TEST</span><h3>Interest Stack</h3><p>Relevant interests combined with problem-aware behaviors.</p><b>Priority 78/100</b></div><div class="card"><span class="tag orange">RETARGET</span><h3>Warm Audience</h3><p>Website, video, profile and engagement visitors.</p><b>Priority 96/100</b></div></div></section>
+<section id="analytics" class="page"><div class="metrics"><div><span>Spend</span><b>₹38.4K</b></div><div><span>Leads</span><b>486</b></div><div><span>CPL</span><b>₹79</b></div><div><span>ROAS</span><b>2.8x</b></div></div><div class="card"><h3>AI performance analysis</h3><div class="analysis"><b>What changed?</b><p>Your strongest campaign is producing lower CPL while retargeting is generating the highest ROAS.</p><b>What to do next?</b><p>Increase spend gradually on the winner, refresh creative fatigue, and keep a separate retargeting budget.</p></div></div></section>
+<section id="instagram" class="page"><div class="section-head"><div><h2>Instagram Automation</h2><p>Design keyword/comment flows now; connect Meta permissions before sending live messages.</p></div><button class="primary" id="flowBtn">+ New flow</button></div><div class="cards three"><div class="card"><span class="tag green">ACTIVE</span><h3>PRICE</h3><p>Comment “PRICE” → DM offer → qualify → send lead to CRM.</p></div><div class="card"><span class="tag green">ACTIVE</span><h3>BOOK</h3><p>Keyword “BOOK” → ask preferred date → capture contact → notify team.</p></div><div class="card"><span class="tag">DRAFT</span><h3>FAQ</h3><p>Answer common questions and hand off high-intent users.</p></div></div></section>
+<section id="leads" class="page"><div class="section-head"><div><h2>Leads</h2><p>Centralize leads from campaigns and automation.</p></div><button class="primary" id="leadBtn">+ Add lead</button></div><div class="card table-wrap"><table><thead><tr><th>Name</th><th>Source</th><th>Status</th><th>Score</th><th>Value</th></tr></thead><tbody id="leadTable"></tbody></table></div></section>
+<section id="crm" class="page"><div class="section-head"><div><h2>CRM Pipeline</h2><p>Move every lead from first contact to revenue.</p></div></div><div class="pipeline"><div><h4>New</h4><div class="deal">Rahul • ₹15K</div><div class="deal">Sneha • ₹22K</div></div><div><h4>Contacted</h4><div class="deal">Amit • ₹35K</div></div><div><h4>Qualified</h4><div class="deal">Priya • ₹48K</div></div><div><h4>Won</h4><div class="deal">Karan • ₹75K</div></div></div></section>
+<section id="settings" class="page"><div class="card"><h2>Business profile</h2><div class="form-grid"><input id="bizName" placeholder="Business name"><input id="bizIndustry" placeholder="Industry"><input id="bizLocation" placeholder="Location"><input id="bizWebsite" placeholder="Website"><input id="bizOffer" placeholder="Main offer"><input id="bizAudience" placeholder="Target audience"><input id="bizGoal" placeholder="Primary goal"><input id="bizBudget" placeholder="Monthly ad budget"><button class="primary" id="saveBiz">Save business profile</button></div></div><div class="card"><h2>Integrations</h2><p>Meta Ads: <span id="metaStatus">Checking…</span></p><p>AI provider: Mock by default; switch to OpenAI in <code>.env</code>.</p></div></section>
+</main></div>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="app.js"></script></body></html>
